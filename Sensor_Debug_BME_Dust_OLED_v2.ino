@@ -65,8 +65,13 @@ const float VOLTAGE_DIVIDER_MULTIPLIER = 1.545; // set to 1.0 if no divider is i
 // Dust formulas vary by exact sensor/module.
 // This preserves your original conversion, but applies it to estimated sensor output voltage.
 float convertVoltageToDust(float sensorVoltage) {
-  float dustDensity = 170.0 * sensorVoltage - 0.1;
-  if (dustDensity < 0) dustDensity = 0;
+  float sensorMilliVolts = sensorVoltage * 1000.0;
+  float dustDensity = 0;
+
+  if (sensorMilliVolts > 400) {
+    dustDensity = (sensorMilliVolts - 400) * 0.2;
+  }
+
   return dustDensity;
 }
 
@@ -197,18 +202,16 @@ void testBME280() {
 }
 
 int readDustRaw() {
-  // Standard dust sensor timing:
-  // Turn IR LED on, wait 280 us, sample analog output, then turn LED off.
-  dustLedOn();
+  digitalWrite(DUST_ILED, HIGH);   // LED ON
   delayMicroseconds(280);
 
-  int voMeasured = analogRead(DUST_AOUT);
+  int raw = analogRead(DUST_AOUT);
 
   delayMicroseconds(40);
-  dustLedOff();
+  digitalWrite(DUST_ILED, LOW);    // LED OFF
   delayMicroseconds(9680);
 
-  return voMeasured;
+  return raw;
 }
 
 void printSerialReadings(float tempC, float humidity, float pressure_hPa,
